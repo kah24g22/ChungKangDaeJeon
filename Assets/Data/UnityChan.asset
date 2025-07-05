@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52be4755b6dacc843b961d88ba454a1b, type: 3}
+  m_Name: UnityChan
+  m_EditorClassIdentifier: 
+  speed: 5
+  dashSpeed: 15
+  dashDuration: 0.3
+  dashCooldown: 1
+  curHp: 100
+  maxHp: 100
+  curEp: 50
+  maxEp: 100
+  epReRate: 1
+  epReDelay: 2
+  dashEpCost: 20
+  level: 1
+  curExp: 0
+  maxExp: 50
+  levelUpMultiple: 2
+  attackPower: 1
