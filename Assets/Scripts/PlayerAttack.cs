@@ -7,12 +7,11 @@ public class PlayerAttack : MonoBehaviour
     public Animator animator;
 
     private readonly int attackTriggerHash = Animator.StringToHash("Attack");
-    private const string ATTACK_TAG = "Attack"; // 애니메이터에 설정한 태그와 동일해야 합니다.
     private const string ATTACK_LAYER_NAME = "Attack Layer"; // 공격 애니메이션이 있는 레이어의 이름
     private int attackLayerIndex = -1;
 
     // 공격 상태와 입력 스택 문제를 해결하기 위한 플래그
-    private bool isAttacking = false;
+    public bool isAttacking = false;
 
     [Header("Melee Range")]
     [SerializeField] private float radius = 1.5f; // 부채꼴의 반지름 (최대 거리)
@@ -41,37 +40,18 @@ public class PlayerAttack : MonoBehaviour
     void Update()
     {
         FindVisibleTargets();
-
-        // 만약 공격 중이 아니라면, 더 이상 확인할 필요가 없습니다.
-        if (!isAttacking)
-        {
-            return;
-        }
-
-        // 공격 중일 때만 애니메이션 상태를 확인합니다.
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(attackLayerIndex);
-
-        // 현재 애니메이션 상태가 'Attack' 태그가 아니고, isAttacking이 true라면
-        // 이는 공격 애니메이션이 방금 끝났다는 의미입니다.
-        if (!stateInfo.IsTag(ATTACK_TAG))
-        {
-            isAttacking = false; // 공격 상태 플래그를 해제합니다.
-        }
     }
 
     void OnAttack()
     {
-        // 공격 플래그가 true이면 (이미 공격 중이면) 입력을 무시합니다.
+        // 이미 공격 중이면(StateMachineBehaviour가 아직 false로 바꾸기 전이면) 입력을 무시합니다
         if (isAttacking)
         {
             return;
         }
 
-        // 현재 애니메이터의 기본 레이어 상태 정보를 가져옵니다.
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(attackLayerIndex);
-
-        // 공격 애니메이션 재생
-        isAttacking = true;
+        // 공격 트리거만 설정합니다.
+        // isAttacking 플래그를 true/false로 바꾸는 것은 이제 AttackStateBehaviour의 역할입니다.
         animator.SetTrigger(attackTriggerHash);
         Debug.Log("공격!");
 
