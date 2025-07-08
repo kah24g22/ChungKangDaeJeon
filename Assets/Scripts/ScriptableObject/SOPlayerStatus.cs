@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "PlayerStatus", menuName = "Player/PlayerStatus")]
+[CreateAssetMenu(fileName = "SOPlayerStatus", menuName = "Scriptable Objects/SOPlayerStatus")]
 public class SOPlayerStatus : ScriptableObject
 {
     [Header("Movement")]

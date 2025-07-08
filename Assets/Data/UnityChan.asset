@@ -18,9 +18,9 @@ MonoBehaviour:
   dashCooldown: 1
   curHp: 100
   maxHp: 100
-  curEp: 50
+  curEp: 100
   maxEp: 100
-  epReRate: 1
+  epReRate: 10
   epReDelay: 2
   dashEpCost: 20
   level: 1

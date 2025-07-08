@@ -4,7 +4,12 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour
 {
+    public bool isGun = false;
+
     public Animator animator;
+
+    // PlayerDirection 컴포넌트의 참조를 저장할 변수
+    private PlayerDirection playerDirection;
 
     private readonly int attackTriggerHash = Animator.StringToHash("Attack");
     private const string ATTACK_LAYER_NAME = "Attack Layer"; // 공격 애니메이션이 있는 레이어의 이름
@@ -17,6 +22,10 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private float radius = 1.5f; // 부채꼴의 반지름 (최대 거리)
     [Range(0, 360)]
     [SerializeField] private float angle = 90f;  // 부채꼴의 각도 (시야각)
+
+    [Header("GunsReference")]
+    public GameObject bulletPrefab; // Bullet.cs 스크립트가 들어있는 총알 프리팹
+    public Transform firePoint;     // 총알이 생성될 위치
 
     [Header("Target Setting")]
     [SerializeField] private LayerMask enemyLayer = 9;   // 감지할 타겟의 레이어 (예: "Enemy")
@@ -35,14 +44,29 @@ public class PlayerAttack : MonoBehaviour
             // 이 컴포넌트를 비활성화하여 추가 오류를 방지할 수 있습니다.
             this.enabled = false;
         }
+        // 스크립트가 시작될 때 GetComponent로 참조를 한 번만 찾아옵니다.
+        playerDirection = GetComponent<PlayerDirection>();
     }
 
     void Update()
     {
-        FindVisibleTargets();
+
     }
 
     void OnAttack()
+    {
+        if (!isGun)
+        {
+            FindAttackableTargets();
+            Melee();
+        }
+        else
+        {
+            Shoot();
+        }    
+    }
+
+    void Melee()
     {
         // 이미 공격 중이면(StateMachineBehaviour가 아직 false로 바꾸기 전이면) 입력을 무시합니다
         if (isAttacking)
@@ -62,7 +86,35 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    void FindVisibleTargets()
+    void Shoot()
+    {
+        // PlayerDirection.cs가 계산해 둔 최종 수평 방향을 가져옵니다.
+        Vector3 fireDirection = playerDirection.aimDirection;
+
+        if (fireDirection.sqrMagnitude > 0.01f)
+        {
+            // 1. ObjectPooler에서 총알을 가져옵니다.
+            GameObject bulletObject = ObjectPooler.Instance.GetBullet();
+
+            // 2. 총알의 위치와 회전을 설정합니다.
+            Quaternion bulletRotation = Quaternion.LookRotation(fireDirection);
+            bulletObject.transform.position = firePoint.position;
+            bulletObject.transform.rotation = bulletRotation;
+
+            // 3. 총알 스크립트를 초기화합니다.
+            BulletController bulletScript = bulletObject.GetComponent<BulletController>();
+            if (bulletScript != null)
+            {
+                bulletScript.Initialize(fireDirection);
+            }
+            else
+            {
+                Debug.LogError("총알 프리팹에 BulletController 스크립트가 없습니다!");
+            }
+        }
+    }
+
+    void FindAttackableTargets()
     {
         // 이전 프레임에서 감지된 타겟 리스트를 초기화
         enemyList.Clear();
@@ -128,7 +180,7 @@ public class PlayerAttack : MonoBehaviour
     }
 
     // 각도를 방향 벡터로 변환해주는 헬퍼 함수
-    public Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
+    private Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
     {
         if (!angleIsGlobal)
         {
