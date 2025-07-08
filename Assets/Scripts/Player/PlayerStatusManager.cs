@@ -6,7 +6,48 @@ public class PlayerStatusManager : MonoBehaviour
     [Header("Status Data")]
     public SOPlayerStatus data;
 
-    private Coroutine epRecoveryCoroutine;
+    // EP 회복 지연 시간을 추적하기 위한 타이머
+    private float epRecoveryTimer;
+    // 소수점 단위의 EP 회복량을 누적하기 위한 변수
+    private float recoveryAccumulation;
+
+    void Update()
+    {
+        // EP가 이미 가득 차 있다면 아무것도 하지 않음
+        if (data.curEp >= data.maxEp)
+        {
+            return;
+        }
+
+        // EP 회복 지연 타이머가 아직 남아있다면 시간을 감소시킴
+        if (epRecoveryTimer > 0)
+        {
+            epRecoveryTimer -= Time.deltaTime;
+        }
+        // 타이머가 0이 되면 EP를 회복 시작
+        else
+        {
+            RecoverEp();
+        }
+    }
+
+    // EP를 회복하는 함수
+    private void RecoverEp()
+    {
+        // 1. 초당 회복량을 누적 변수에 더합니다.
+        recoveryAccumulation += data.epReRate * Time.deltaTime;
+
+        // 2. 누적치가 1 이상이 되면
+        if (recoveryAccumulation >= 1f)
+        {
+            // 3. 누적치의 정수 부분만큼 실제 EP를 회복시킵니다.
+            int amountToRecover = Mathf.FloorToInt(recoveryAccumulation);
+            AddEp(amountToRecover);
+
+            // 4. 회복시킨 양만큼 누적치에서 뺍니다. (소수점 부분만 남김)
+            recoveryAccumulation -= amountToRecover;
+        }
+    }
 
     // EP를 사용할 수 있는지 확인하는 메서드
     public bool CanUseEp(int amount)
@@ -25,60 +66,23 @@ public class PlayerStatusManager : MonoBehaviour
         data.curEp -= amount;
         Debug.Log($"EP used: {amount}, Current EP: {data.curEp}/{data.maxEp}");
 
-        // EP 사용 시, 기존 회복 코루틴을 멈추고 지연 시간 후 다시 시작
-        RestartEpRecovery();
+        // EP를 사용했으므로, 회복 지연 타이머를 다시 설정
+        epRecoveryTimer = data.epReDelay;
 
         return true;
     }
 
-    // EP 회복 코루틴을 안전하게 재시작하는 메서드
-    public void RestartEpRecovery()
-    {
-        if (epRecoveryCoroutine != null)
-        {
-            StopCoroutine(epRecoveryCoroutine);
-        }
-        epRecoveryCoroutine = StartCoroutine(RecoverEpAfterDelay());
-    }
-
-    private IEnumerator RecoverEpAfterDelay()
-    {
-        // 설정된 지연 시간만큼 기다립니다.
-        yield return new WaitForSeconds(data.epReDelay);
-
-        float recoveryAccumulation = 0;
-        // EP가 최대치에 도달할 때까지 계속 회복합니다.
-        while (data.curEp < data.maxEp)
-        {
-            // EP 회복
-            recoveryAccumulation += data.epReRate * Time.deltaTime;
-            if (recoveryAccumulation >= 1)
-            {
-                int recovery = Mathf.FloorToInt(recoveryAccumulation);
-                AddEp(recovery);
-                recoveryAccumulation -= recovery;
-            }
-            yield return null; // 다음 프레임까지 대기
-        }
-        Debug.Log("EP fully recovered");
-        epRecoveryCoroutine = null; // 코루틴 종료
-    }
-
-    // (기존의 AddEp, SetEp 등 다른 메서드는 그대로 둡니다)
-
+    // (디버깅 또는 특정 이벤트용) EP를 즉시 추가하는 함수
     public void AddEp(int amount)
     {
-        float oldEp = data.curEp;
         data.curEp = Mathf.Min(data.maxEp, data.curEp + amount);
-
-        if (data.curEp >= data.maxEp && oldEp < data.maxEp)
-        {
-            Debug.Log("EP fully recovered");
-        }
     }
 
+    // (디버깅 또는 특정 이벤트용) EP를 특정 값으로 설정하는 함수
     public void SetEp(int amount)
     {
         data.curEp = Mathf.Clamp(amount, 0, data.maxEp);
+        // EP가 수동으로 변경되었을 때도 회복 딜레이를 적용하고 싶다면 아래 줄의 주석을 해제하세요.
+        // epRecoveryTimer = data.epReDelay;
     }
 }
