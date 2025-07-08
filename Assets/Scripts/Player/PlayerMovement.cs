@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Player Status")]
-    public StatusManager status;
+    public PlayerStatusManager status;
 
     [Header("Animation Settings")]
     public float animationSmoothTime = 0.1f;
@@ -39,8 +39,21 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
+        if (characterController == null)
+        {
+            Debug.LogError("CharacterController component is missing on this object!", this);
+            this.enabled = false; // 스크립트 비활성화
+            return;
+        }
+
+        // 카메라 Transform이 할당되었는지 확인합니다.
         if (cameraTransform == null)
-            cameraTransform = Camera.main.transform;
+        {
+            Debug.LogError("PlayerMovement: Camera Transform is not assigned in the inspector!", this);
+            this.enabled = false;
+            return;
+        }
+
         if (animator == null)
             animator = GetComponent<Animator>();
     }
@@ -195,15 +208,8 @@ public class PlayerMovement : MonoBehaviour
             localMoveDirection = Vector3.zero;
         }
 
-        if (characterController != null)
-        {
-            Vector3 move = moveDirection * status.data.speed * Time.deltaTime;
-            characterController.Move(move);
-        }
-        else
-        {
-            transform.position += moveDirection * status.data.speed * Time.deltaTime;
-        }
+        Vector3 move = moveDirection * status.data.speed * Time.deltaTime;
+        characterController.Move(move);
     }
 
     void HandleAnimation()

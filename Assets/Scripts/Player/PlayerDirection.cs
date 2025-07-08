@@ -3,25 +3,20 @@ using UnityEngine;
 public class PlayerDirection : MonoBehaviour
 {
     [Header("Camera Setting")]
-    public Camera playerCamera;
+    public Camera playerCamera; // 에디터에서 할당 
 
     [Header("Debug")]
     public bool showDebugRay = false;
 
-    private Vector3 targetDirection;
+    public Vector3 aimDirection { get; private set; }
 
     void Start()
     {
-        // 카메라가 할당되지 않았다면 메인 카메라를 사용
+        // 카메라가 인스펙터에서 할당되었는지 확인합니다.
         if (playerCamera == null)
         {
-            playerCamera = Camera.main;
-        }
-
-        // 카메라를 찾을 수 없다면 경고
-        if (playerCamera == null)
-        {
-            Debug.LogWarning("PlayerDirection: Can't find camera!");
+            Debug.LogError("PlayerDirection: Player Camera is not assigned in the inspector!", this);
+            this.enabled = false;
         }
     }
 
@@ -42,17 +37,17 @@ public class PlayerDirection : MonoBehaviour
         // 방향이 유효한지 확인
         if (directionToMouse.magnitude > 0.1f)
         {
-            targetDirection = directionToMouse;
+            aimDirection = directionToMouse;
 
             // 즉시 회전
-            Quaternion targetRotation = Quaternion.LookRotation(targetDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(aimDirection);
             transform.rotation = targetRotation;
         }
 
         // 디버그 레이 표시
         if (showDebugRay)
         {
-            Debug.DrawRay(transform.position, targetDirection * 3f, Color.red);
+            Debug.DrawRay(transform.position, aimDirection * 3f, Color.red);
             Debug.DrawLine(transform.position, mouseWorldPosition, Color.blue);
         }
     }
@@ -79,13 +74,13 @@ public class PlayerDirection : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         // 씬 뷰에서 방향 표시
-        if (Application.isPlaying && targetDirection != Vector3.zero)
+        if (Application.isPlaying && aimDirection != Vector3.zero)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, transform.position + targetDirection * 2f);
+            Gizmos.DrawLine(transform.position, transform.position + aimDirection * 2f);
 
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position + targetDirection * 2f, 0.2f);
+            Gizmos.DrawWireSphere(transform.position + aimDirection * 2f, 0.2f);
         }
     }
 }
