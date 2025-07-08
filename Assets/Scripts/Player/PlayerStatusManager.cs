@@ -6,24 +6,38 @@ public class PlayerStatusManager : MonoBehaviour
     [Header("Status Data")]
     public SOPlayerStatus data;
 
-    // EP 회복 관련 변수
-    private float recoveryAccumulation;
     private Coroutine epRecoveryCoroutine;
 
-
-    public void UseEp(int amount)
+    // EP를 사용할 수 있는지 확인하는 메서드
+    public bool CanUseEp(int amount)
     {
-        if (data.curEp < amount) return; // EP가 부족하면 사용하지 않음
+        return data.curEp >= amount;
+    }
+
+    // EP를 사용하는 메서드 (성공 여부 반환)
+    public bool UseEp(int amount)
+    {
+        if (!CanUseEp(amount))
+        {
+            return false; // EP 부족
+        }
 
         data.curEp -= amount;
         Debug.Log($"EP used: {amount}, Current EP: {data.curEp}/{data.maxEp}");
 
-        // 만약 이미 회복 코루틴이 실행 중이라면 중지시킵니다.
+        // EP 사용 시, 기존 회복 코루틴을 멈추고 지연 시간 후 다시 시작
+        RestartEpRecovery();
+
+        return true;
+    }
+
+    // EP 회복 코루틴을 안전하게 재시작하는 메서드
+    public void RestartEpRecovery()
+    {
         if (epRecoveryCoroutine != null)
         {
             StopCoroutine(epRecoveryCoroutine);
         }
-        // 새로운 회복 코루틴을 시작합니다.
         epRecoveryCoroutine = StartCoroutine(RecoverEpAfterDelay());
     }
 
@@ -32,6 +46,7 @@ public class PlayerStatusManager : MonoBehaviour
         // 설정된 지연 시간만큼 기다립니다.
         yield return new WaitForSeconds(data.epReDelay);
 
+        float recoveryAccumulation = 0;
         // EP가 최대치에 도달할 때까지 계속 회복합니다.
         while (data.curEp < data.maxEp)
         {
@@ -49,11 +64,13 @@ public class PlayerStatusManager : MonoBehaviour
         epRecoveryCoroutine = null; // 코루틴 종료
     }
 
+    // (기존의 AddEp, SetEp 등 다른 메서드는 그대로 둡니다)
+
     public void AddEp(int amount)
     {
         float oldEp = data.curEp;
         data.curEp = Mathf.Min(data.maxEp, data.curEp + amount);
-        
+
         if (data.curEp >= data.maxEp && oldEp < data.maxEp)
         {
             Debug.Log("EP fully recovered");
